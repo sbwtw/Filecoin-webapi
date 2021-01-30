@@ -39,8 +39,7 @@ openssl = "*"
 
 [dependencies.filecoin-proofs-api]
 package = "filecoin-proofs-api"
-git = "https://github.com/sbwtw/rust-filecoin-proofs-api"
-branch = "webapi/v5.4.1"
+version = "5.4.1"
 default-features = false
 
 [features]

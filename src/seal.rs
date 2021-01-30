@@ -6,7 +6,7 @@ use actix_web::{Error, HttpRequest, HttpResponse};
 use bytes::BytesMut;
 use filecoin_proofs_api::{seal, PieceInfo};
 use futures_util::StreamExt;
-use log::{error, trace};
+use log::*;
 use serde_json::json;
 use std::fs::OpenOptions;
 use std::io;
@@ -111,8 +111,12 @@ pub async fn seal_commit_phase2(
         let r = seal::seal_commit_phase2(data.phase1_output.clone(), data.prover_id, data.sector_id);
 
         trace!("seal_commit_phase2 finished");
+        if !r.is_ok() {
+            warn!("seal_commit_phase2 calc error: {:?}", r);
+        }
+
         if let Err(e) = tx.send(json!(r.map_err(|e| format!("{:?}", e)))) {
-            error!("seal_commit_phase2 error: {:?}", e);
+            error!("seal_commit_phase2 send error: {:?}", e);
         }
     });
 
