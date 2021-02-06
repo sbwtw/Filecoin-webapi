@@ -10,6 +10,7 @@ use crate::system::ServState;
 use actix_web::middleware::Condition;
 use clap::Arg;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use std::fs::metadata;
 
 mod config;
 mod mid;
@@ -52,6 +53,7 @@ async fn main() -> std::io::Result<()> {
         )
         .get_matches();
 
+    // default logger settings
     if std::env::var("RUST_LOG").is_err() {
         if cfg!(debug_assertions) {
             std::env::set_var("RUST_LOG", "filecoin_webapi=trace,actix_web=debug");
@@ -61,12 +63,27 @@ async fn main() -> std::io::Result<()> {
     }
 
     env_logger::init();
+
+    // if TMPDIR is set, ensure dir is exist
+    if let Ok(tmp) = std::env::var("TMPDIR") {
+        match metadata(&tmp).map(|x| x.is_dir()) {
+            Ok(true) => {}
+            _ => panic!("TMPDIR={} not a valid directory!", tmp),
+        }
+    }
+
+    // if CUDA_VISIBLE_DEVICES, print to warning log
+    if let Ok(cuda_devs) = std::env::var("CUDA_VISIBLE_DEVICES") {
+        warn!("CUDA_VISIBLE_DEVICES={}", cuda_devs);
+    }
+
+    // create upload dir
     std::fs::create_dir_all("/tmp/upload/")?;
 
     let config_file = m.value_of("config").unwrap();
     let f = std::fs::File::open(config_file).unwrap();
     let config: Config = serde_yaml::from_reader(f).unwrap();
-    warn!("config {:?}", config);
+    info!("config {:?}", config);
 
     let state = Arc::new(Mutex::new(ServState::new(config.clone())));
     let bind_addr = config.listen_addr.clone();

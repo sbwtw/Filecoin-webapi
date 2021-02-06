@@ -14,6 +14,7 @@ use std::path::Path;
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
+use std::time::Instant;
 
 pub async fn clear_cache(_req: HttpRequest, data: Json<ClearCacheData>) -> HttpResponse {
     trace!("clear_cache");
@@ -104,13 +105,14 @@ pub async fn seal_commit_phase2(
 
     let data_len = bytes.len();
     let data: SealCommitPhase2Data = serde_json::from_slice(bytes.as_ref())?;
-    trace!("seal_commit_phase2, data len: {}", data_len);
+    debug!("seal_commit_phase2, data len: {}", data_len);
 
     let (tx, rx) = channel();
     let handle: JoinHandle<()> = thread::spawn(move || {
+        let start = Instant::now();
         let r = seal::seal_commit_phase2(data.phase1_output.clone(), data.prover_id, data.sector_id);
 
-        trace!("seal_commit_phase2 finished");
+        debug!("seal_commit_phase2 finished in {} secs", start.elapsed().as_secs());
         if !r.is_ok() {
             warn!("seal_commit_phase2 calc error: {:?}", r);
         }
