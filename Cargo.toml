@@ -48,4 +48,4 @@ pairing = ["filecoin-proofs-api/pairing", "bellperson/pairing"]
 blst = ["filecoin-proofs-api/blst", "bellperson/blst"]
 
 [patch.crates-io]
-bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "2080Ti" }
+bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "3080" }
