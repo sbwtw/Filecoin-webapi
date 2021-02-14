@@ -7,7 +7,6 @@ use futures::stream::{StreamExt, TryStreamExt};
 use lazy_static::lazy_static;
 use libc::pthread_cancel;
 use log::*;
-use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::io::Write;
@@ -23,12 +22,7 @@ lazy_static! {
     static ref WORKER_INIT: AtomicBool = AtomicBool::new(false);
 }
 
-#[derive(Serialize, Debug)]
-struct ServerLoad {
-    limit: u64,
-    current: u64,
-}
-
+#[derive(Debug)]
 pub struct WorkerProp {
     name: String,
     handle: JoinHandle<()>,
@@ -41,6 +35,7 @@ impl WorkerProp {
     }
 }
 
+#[derive(Debug)]
 pub struct ServState {
     workers: HashMap<u64, WorkerProp>,
     config: Config,
@@ -55,6 +50,10 @@ impl ServState {
             workers: HashMap::new(),
             config,
         }
+    }
+
+    pub fn debug_info(&self) -> String {
+        format!("{:#?}", self)
     }
 
     pub fn verify_token<S: AsRef<str>>(&self, token: S) -> bool {
@@ -146,19 +145,11 @@ pub async fn test_polling(state: Data<Arc<Mutex<ServState>>>) -> HttpResponse {
     HttpResponse::Ok().json(response)
 }
 
-pub async fn query_load(state: Data<Arc<Mutex<ServState>>>, phase: Json<String>) -> HttpResponse {
-    trace!("query_load: {:?}", phase);
-
+pub async fn debug_info(state: Data<Arc<Mutex<ServState>>>) -> HttpResponse {
     let data = {
         let state = state.lock().unwrap();
-
-        ServerLoad {
-            limit: state.job_limit(&phase.0),
-            current: state.job_num(&phase.0),
-        }
+        state.debug_info()
     };
-
-    debug!("current load for {}, {:?}", &phase.0, data);
 
     HttpResponse::Ok().json(data)
 }

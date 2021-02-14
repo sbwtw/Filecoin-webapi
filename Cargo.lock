@@ -455,7 +455,7 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 [[package]]
 name = "bellperson"
 version = "0.12.3"
-source = "git+https://github.com/sbwtw/bellperson?branch=2080Ti#aa67c4923cad8f148d959cfd4f046a00e039d1e6"
+source = "git+https://github.com/sbwtw/bellperson?branch=3080#86a212b644533d8ee0bcafc6c1f225d4d3575cec"
 dependencies = [
  "bit-vec",
  "blake2s_simd",
