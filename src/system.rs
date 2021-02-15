@@ -15,7 +15,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 lazy_static! {
     static ref WORKER_TOKEN: AtomicU64 = AtomicU64::new(0);
@@ -27,11 +27,19 @@ pub struct WorkerProp {
     name: String,
     handle: JoinHandle<()>,
     receiver: Receiver<Value>,
+    create_time: SystemTime,
+    last_query: SystemTime,
 }
 
 impl WorkerProp {
     pub fn new(name: String, handle: JoinHandle<()>, receiver: Receiver<Value>) -> Self {
-        Self { name, handle, receiver }
+        Self {
+            name,
+            handle,
+            receiver,
+            create_time: SystemTime::now(),
+            last_query: SystemTime::now(),
+        }
     }
 }
 
@@ -53,7 +61,14 @@ impl ServState {
     }
 
     pub fn debug_info(&self) -> String {
-        format!("{:#?}", self)
+        let mut debug_info = String::new();
+
+        debug_info.push_str(&format!("{:#?}\n", self));
+        for (id, prop) in &self.workers {
+            debug_info.push_str(&format!("{}: {:#?}\n", id, prop.receiver.try_recv()));
+        }
+
+        debug_info
     }
 
     pub fn verify_token<S: AsRef<str>>(&self, token: S) -> bool {
@@ -88,11 +103,16 @@ impl ServState {
     pub fn get(&mut self, token: u64) -> PollingState {
         let state = self
             .workers
-            .get(&token)
-            .map(|x| match x.receiver.try_recv() {
-                Ok(r) => PollingState::Done(r),
-                Err(TryRecvError::Empty) => PollingState::Pending,
-                Err(TryRecvError::Disconnected) => PollingState::Error(PollingError::Disconnected),
+            .get_mut(&token)
+            .map(|x| {
+                // update query time
+                x.last_query = SystemTime::now();
+
+                match x.receiver.try_recv() {
+                    Ok(r) => PollingState::Done(r),
+                    Err(TryRecvError::Empty) => PollingState::Pending,
+                    Err(TryRecvError::Disconnected) => PollingState::Error(PollingError::Disconnected),
+                }
             })
             .unwrap_or(PollingState::Error(PollingError::NotExist));
 
@@ -151,7 +171,7 @@ pub async fn debug_info(state: Data<Arc<Mutex<ServState>>>) -> HttpResponse {
         state.debug_info()
     };
 
-    HttpResponse::Ok().json(data)
+    HttpResponse::Ok().body(data)
 }
 
 pub async fn query_state(state: Data<Arc<Mutex<ServState>>>, token: Json<u64>) -> HttpResponse {
