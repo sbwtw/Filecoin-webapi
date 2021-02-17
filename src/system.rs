@@ -7,8 +7,10 @@ use futures::stream::{StreamExt, TryStreamExt};
 use lazy_static::lazy_static;
 use libc::pthread_cancel;
 use log::*;
+use serde::export::Formatter;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::fmt;
 use std::io::Write;
 use std::os::unix::thread::JoinHandleExt;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -22,13 +24,25 @@ lazy_static! {
     static ref WORKER_INIT: AtomicBool = AtomicBool::new(false);
 }
 
-#[derive(Debug)]
 pub struct WorkerProp {
     name: String,
     handle: JoinHandle<()>,
     receiver: Receiver<Value>,
     create_time: SystemTime,
     last_query: SystemTime,
+}
+
+impl fmt::Debug for WorkerProp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "name: {:#?}", self.name)?;
+        writeln!(f, "create_time: {:#?}", self.create_time)?;
+        writeln!(f, "last_query: {:#?}", self.last_query)?;
+        writeln!(
+            f,
+            "since_secs: {:#?}",
+            self.last_query.duration_since(self.create_time).map(|x| x.as_secs())
+        )
+    }
 }
 
 impl WorkerProp {
@@ -61,14 +75,7 @@ impl ServState {
     }
 
     pub fn debug_info(&self) -> String {
-        let mut debug_info = String::new();
-
-        debug_info.push_str(&format!("{:#?}\n", self));
-        for (id, prop) in &self.workers {
-            debug_info.push_str(&format!("{}: {:#?}\n", id, prop.receiver.try_recv()));
-        }
-
-        debug_info
+        format!("{:#?}\n", self)
     }
 
     pub fn verify_token<S: AsRef<str>>(&self, token: S) -> bool {
@@ -119,6 +126,10 @@ impl ServState {
         match &state {
             PollingState::Done(_) => {
                 debug!("Job {} removed dut to finish", token);
+                self.workers.remove(&token);
+            }
+            PollingState::Error(PollingError::Disconnected) => {
+                debug!("Job {} removed dut to receiver disconnected", token);
                 self.workers.remove(&token);
             }
             _ => {}
