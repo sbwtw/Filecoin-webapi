@@ -37,10 +37,11 @@ impl fmt::Debug for WorkerProp {
         writeln!(f, "name: {:#?}", self.name)?;
         writeln!(f, "create_time: {:#?}", self.create_time)?;
         writeln!(f, "last_query: {:#?}", self.last_query)?;
+        writeln!(f, "since_query: {}", self.last_query_since_secs())?;
         writeln!(
             f,
-            "since_secs: {:#?}",
-            self.last_query.duration_since(self.create_time).map(|x| x.as_secs())
+            "since_create: {:#?}",
+            SystemTime::now().duration_since(self.create_time).map(|x| x.as_secs())
         )
     }
 }
@@ -54,6 +55,13 @@ impl WorkerProp {
             create_time: SystemTime::now(),
             last_query: SystemTime::now(),
         }
+    }
+
+    fn last_query_since_secs(&self) -> u64 {
+        SystemTime::now()
+            .duration_since(self.last_query)
+            .map(|x| x.as_secs())
+            .unwrap_or(0)
     }
 }
 
