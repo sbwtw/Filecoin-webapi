@@ -39,7 +39,7 @@ openssl = "*"
 
 [dependencies.filecoin-proofs-api]
 package = "filecoin-proofs-api"
-version = "~6.1"
+version = "8.0.1"
 default-features = false
 
 [features]
