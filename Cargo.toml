@@ -34,7 +34,7 @@ mime = "*"
 lazy_static = "*"
 libc = "*"
 bytes = "~0.5"
-bellperson = { version = "0.13", default-features = false, features = ["gpu"] }
+bellperson = { version = "0.14.1", default-features = false, features = ["gpu"] }
 openssl = "*"
 
 [dependencies.filecoin-proofs-api]
@@ -48,4 +48,4 @@ pairing = ["filecoin-proofs-api/pairing", "bellperson/pairing"]
 blst = ["filecoin-proofs-api/blst", "bellperson/blst"]
 
 #[patch.crates-io]
-#bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "3080" }
+#bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "2080Ti" }
