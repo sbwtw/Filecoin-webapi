@@ -18,7 +18,7 @@ name = "filecoin-webapi"
 path = "src/main.rs"
 
 [dependencies]
-actix-rt = "*"
+actix-rt = "~2"
 actix-web = { version = "^3", features = ["openssl"] }
 actix-multipart = "*"
 futures = "*"
