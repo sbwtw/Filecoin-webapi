@@ -19,7 +19,7 @@ path = "src/main.rs"
 
 [dependencies]
 actix-rt = "~2"
-actix-web = { version = "^3", features = ["openssl"] }
+actix-web = { version = "^3", features = ["rustls"] }
 actix-multipart = "*"
 futures = "*"
 futures-core = "*"
@@ -35,7 +35,9 @@ lazy_static = "*"
 libc = "*"
 bytes = "~0.5"
 bellperson = { version = "0.14.1", default-features = false, features = ["gpu"] }
-openssl = "*"
+
+[build-dependencies]
+rustls = "*"
 
 [dependencies.filecoin-proofs-api]
 package = "filecoin-proofs-api"

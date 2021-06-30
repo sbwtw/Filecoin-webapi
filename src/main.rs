@@ -9,7 +9,7 @@ use crate::mid::verify::Verify;
 use crate::system::ServState;
 use actix_web::middleware::Condition;
 use clap::Arg;
-use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+//use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::fs::metadata;
 
 mod config;
@@ -88,8 +88,8 @@ async fn main() -> std::io::Result<()> {
     let state = Arc::new(Mutex::new(ServState::new(config.clone())));
     let bind_addr = config.listen_addr.clone();
     let auth = config.auth;
-    let private_cert = config.private_cert.clone();
-    let cert_chain = config.cert_chain.clone();
+    //let private_cert = config.private_cert.clone();
+    //let cert_chain = config.cert_chain.clone();
     let server = HttpServer::new(move || {
         let state = state.clone();
 
@@ -136,20 +136,22 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/seal/write_and_preprocess").route(web::post().to(seal::write_and_preprocess)))
     });
 
-    let server = if let Some(cert) = private_cert {
-        warn!("use private-cert file {}", cert);
+    // let server = if let Some(cert) = private_cert {
+    //     warn!("use private-cert file {}", cert);
 
-        let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-        builder.set_private_key_file(cert, SslFiletype::PEM).unwrap();
-        if let Some(chain) = cert_chain {
-            warn!("use cert-chain file {}", chain);
-            builder.set_certificate_chain_file(chain).unwrap();
-        }
+    //     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    //     builder.set_private_key_file(cert, SslFiletype::PEM).unwrap();
+    //     if let Some(chain) = cert_chain {
+    //         warn!("use cert-chain file {}", chain);
+    //         builder.set_certificate_chain_file(chain).unwrap();
+    //     }
 
-        server.bind_openssl(bind_addr, builder)
-    } else {
-        server.bind(bind_addr)
-    };
+    //     server.bind_openssl(bind_addr, builder)
+    // } else {
+    //  server.bind(bind_addr)
+    // };
+    
+    let server = server.bind(bind_addr);
 
     server?.workers(1).run().await
 }
